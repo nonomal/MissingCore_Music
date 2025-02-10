@@ -4,22 +4,22 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 import type {
-  AlbumWithTracks,
-  ArtistWithTracks,
-  PlaylistWithTracks,
-  TrackWithAlbum,
-} from "@/db/schema";
-import { getPlaylistCover, getTrackCover } from "@/db/utils";
+  SlimAlbumWithTracks,
+  SlimArtist,
+  SlimPlaylistWithTracks,
+  SlimTrackWithAlbum,
+} from "~/db/slimTypes";
+import { getPlaylistCover, getTrackCover } from "~/db/utils";
 
-import { Close } from "@/icons/Close";
-import { Search } from "@/icons/Search";
-import { useTheme } from "@/hooks/useTheme";
+import { Close } from "~/icons/Close";
+import { Search } from "~/icons/Search";
+import { useTheme } from "~/hooks/useTheme";
 
-import { cn } from "@/lib/style";
-import { FlashList, SheetsFlashList } from "@/components/Defaults";
-import { IconButton } from "@/components/Form/Button";
-import { TextInput, useInputRef } from "@/components/Form/Input";
-import { TEm, TStyledText } from "@/components/Typography/StyledText";
+import { cn } from "~/lib/style";
+import { FlashList, SheetsFlashList } from "~/components/Defaults";
+import { IconButton } from "~/components/Form/Button";
+import { TextInput, useInputRef } from "~/components/Form/Input";
+import { TEm, TStyledText } from "~/components/Typography/StyledText";
 import { SearchResult } from "./SearchResult";
 import { useSearch } from "../hooks/useSearch";
 import type {
@@ -159,10 +159,10 @@ function formatResults(results: Partial<SearchResults>) {
 }
 
 type MediaRelations =
-  | { type: "album"; data: AlbumWithTracks }
-  | { type: "artist"; data: ArtistWithTracks }
-  | { type: "playlist"; data: PlaylistWithTracks }
-  | { type: "track"; data: TrackWithAlbum };
+  | { type: "album"; data: SlimAlbumWithTracks }
+  | { type: "artist"; data: SlimArtist }
+  | { type: "playlist"; data: SlimPlaylistWithTracks }
+  | { type: "track"; data: SlimTrackWithAlbum };
 
 /** Get the artwork of the media that'll be displayed. */
 function getArtwork(props: MediaRelations) {

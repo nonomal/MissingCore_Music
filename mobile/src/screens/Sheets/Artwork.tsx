@@ -2,16 +2,16 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import { useState } from "react";
 import { View, useWindowDimensions } from "react-native";
 
-import { useArtist, useUpdateArtist } from "@/queries/artist";
-import { usePlaylist, useUpdatePlaylist } from "@/queries/playlist";
+import { useArtist, useUpdateArtist } from "~/queries/artist";
+import { usePlaylist, useUpdatePlaylist } from "~/queries/playlist";
 
-import { pickImage } from "@/lib/file-system";
-import { mutateGuard } from "@/lib/react-query";
-import { Button } from "@/components/Form/Button";
-import { Sheet } from "@/components/Sheet";
-import { TStyledText } from "@/components/Typography/StyledText";
-import { MediaImage } from "@/modules/media/components/MediaImage";
-import type { MediaType } from "@/modules/media/types";
+import { pickImage } from "~/lib/file-system";
+import { mutateGuard } from "~/lib/react-query";
+import { Button } from "~/components/Form/Button";
+import { Sheet } from "~/components/Sheet";
+import { TStyledText } from "~/components/Typography/StyledText";
+import { MediaImage } from "~/modules/media/components/MediaImage";
+import type { MediaType } from "~/modules/media/types";
 
 /** Sheet allowing us to change the artwork of a artist. */
 export function ArtistArtworkSheet(props: { payload: { id: string } }) {
@@ -55,7 +55,7 @@ export function PlaylistArtworkSheet(props: { payload: { id: string } }) {
 function BaseArtworkSheetContent(props: {
   type: MediaType;
   imageSource: MediaImage.ImageSource | MediaImage.ImageSource[];
-  mutationResult: UseMutationResult<void, Error, { artwork?: string | null }>;
+  mutationResult: UseMutationResult<any, Error, { artwork?: string | null }>;
 }) {
   const { height, width } = useWindowDimensions();
   const [disabled, setDisabled] = useState(false);

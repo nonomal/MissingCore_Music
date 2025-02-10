@@ -1,18 +1,19 @@
 import { useLocalSearchParams } from "expo-router";
 
-import type { Album } from "@/db/schema";
+import type { Album } from "~/db/schema";
 
-import { useArtistForScreen } from "@/queries/artist";
-import { useBottomActionsContext } from "@/hooks/useBottomActionsContext";
-import { useGetColumn } from "@/hooks/useGetColumn";
-import { CurrentListLayout } from "@/layouts/CurrentList";
+import { useArtistForScreen } from "~/queries/artist";
+import { useBottomActionsContext } from "~/hooks/useBottomActionsContext";
+import { useGetColumn } from "~/hooks/useGetColumn";
+import { CurrentListLayout } from "~/layouts/CurrentList";
 
-import { cn } from "@/lib/style";
-import { FlashList } from "@/components/Defaults";
-import { PagePlaceholder } from "@/components/Transition/Placeholder";
-import { TEm } from "@/components/Typography/StyledText";
-import { MediaCard } from "@/modules/media/components/MediaCard";
-import { Track } from "@/modules/media/components/Track";
+import { cn } from "~/lib/style";
+import { isYearDefined } from "~/utils/number";
+import { FlashList } from "~/components/Defaults";
+import { PagePlaceholder } from "~/components/Transition/Placeholder";
+import { TEm } from "~/components/Typography/StyledText";
+import { MediaCard } from "~/modules/media/components/MediaCard";
+import { Track } from "~/modules/media/components/Track";
 
 /** Screen for `/artist/[id]` route. */
 export default function CurrentArtistScreen() {
@@ -76,7 +77,7 @@ function ArtistAlbums({ albums }: { albums: Album[] | null }) {
             source={item.artwork}
             href={`/album/${item.id}`}
             title={item.name}
-            description={`${item.releaseYear ?? "————"}`}
+            description={`${isYearDefined(item.releaseYear) ? item.releaseYear : "————"}`}
             className={index > 0 ? "ml-3" : undefined}
           />
         )}

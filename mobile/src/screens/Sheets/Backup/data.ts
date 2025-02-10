@@ -6,22 +6,22 @@ import { eq, inArray } from "drizzle-orm";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
-import { db } from "@/db";
-import type { TrackWithAlbum } from "@/db/schema";
-import { albums, playlists, tracks } from "@/db/schema";
-import { mergeTracks, sanitizePlaylistName } from "@/db/utils";
+import { db } from "~/db";
+import type { TrackWithAlbum } from "~/db/schema";
+import { albums, playlists, tracks } from "~/db/schema";
+import { mergeTracks, sanitizePlaylistName } from "~/db/utils";
 
-import i18next from "@/modules/i18n";
-import { getAlbums } from "@/api/album";
-import { createPlaylist, getPlaylists, updatePlaylist } from "@/api/playlist";
-import { getTracks } from "@/api/track";
-import { musicStore } from "@/modules/media/services/Music";
-import { RecentList } from "@/modules/media/services/RecentList";
-import { Resynchronize } from "@/modules/media/services/Resynchronize";
+import i18next from "~/modules/i18n";
+import { getAlbums } from "~/api/album";
+import { createPlaylist, getPlaylists, updatePlaylist } from "~/api/playlist";
+import { getTracks } from "~/api/track";
+import { musicStore } from "~/modules/media/services/Music";
+import { RecentList } from "~/modules/media/services/RecentList";
+import { Resynchronize } from "~/modules/media/services/Resynchronize";
 
-import { clearAllQueries } from "@/lib/react-query";
-import { ToastOptions } from "@/lib/toast";
-import { pickKeys } from "@/utils/object";
+import { clearAllQueries } from "~/lib/react-query";
+import { ToastOptions } from "~/lib/toast";
+import { pickKeys } from "~/utils/object";
 
 const SAF = FileSystem.StorageAccessFramework;
 
@@ -93,9 +93,9 @@ async function findExistingTracksFactory() {
 async function exportBackup() {
   // Get favorited values.
   const [favAlbums, favPlaylists, favTracks] = await Promise.all([
-    getAlbums([eq(albums.isFavorite, true)]),
-    getPlaylists([eq(playlists.isFavorite, true)]),
-    getTracks([eq(tracks.isFavorite, true)]),
+    getAlbums({ where: [eq(albums.isFavorite, true)] }),
+    getPlaylists({ where: [eq(playlists.isFavorite, true)] }),
+    getTracks({ where: [eq(tracks.isFavorite, true)] }),
   ]);
   // Get all user-generated playlists.
   const allPlaylists = await getPlaylists();

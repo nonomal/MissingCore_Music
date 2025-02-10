@@ -3,14 +3,15 @@ import { Appearance } from "react-native";
 import TrackPlayer from "react-native-track-player";
 import { useStore } from "zustand";
 
-import i18next from "@/modules/i18n";
-import { LANGUAGES } from "@/modules/i18n/constants";
-import { musicStore } from "@/modules/media/services/Music";
-import { RecentList } from "@/modules/media/services/RecentList";
+import i18next from "~/modules/i18n";
+import { LANGUAGES } from "~/modules/i18n/constants";
+import { musicStore } from "~/modules/media/services/Music";
+import { RecentList } from "~/modules/media/services/RecentList";
 
-import { clearAllQueries } from "@/lib/react-query";
-import { createPersistedSubscribedStore } from "@/lib/zustand";
-import { getSourceName } from "@/modules/media/helpers/data";
+import { clearAllQueries } from "~/lib/react-query";
+import { createPersistedSubscribedStore } from "~/lib/zustand";
+import { moveArray } from "~/utils/object";
+import { getSourceName } from "~/modules/media/helpers/data";
 
 /** Options for app themes. */
 export const ThemeOptions = ["light", "dark", "system"] as const;
@@ -18,6 +19,8 @@ export const ThemeOptions = ["light", "dark", "system"] as const;
 export const FontOptions = ["NDot", "NType", "Roboto"] as const;
 /** Options for "Now Playing" screen designs. */
 export const NowPlayingDesignOptions = ["vinyl", "plain"] as const;
+/** Options for the tabs we can reorder. */
+export type OrderableTab = "album" | "artist" | "folder" | "playlist" | "track";
 
 //#region Zustand Store
 //#region UserPreferencesStore Interface
@@ -44,6 +47,13 @@ interface UserPreferencesStore {
     newDesign: UserPreferencesStore["nowPlayingDesign"],
   ) => void;
 
+  /** Order of tabs on the home screen. */
+  tabsOrder: OrderableTab[];
+  moveTab: (fromIndex: number, toIndex: number) => void;
+  /** Visibility of the tabs on the home screen. */
+  tabsVisibility: Record<OrderableTab, boolean>;
+  toggleTabVisibility: (tab: OrderableTab) => void;
+
   /** Minimum number of seconds a track needs to have to be saved. */
   minSeconds: number;
 
@@ -66,6 +76,8 @@ const OMITTED_FIELDS: string[] = [
   "setTheme",
   "setAccentFont",
   "setNowPlayingDesign",
+  "moveTab",
+  "toggleTabVisibility",
   "setVolume",
 ] satisfies Array<keyof UserPreferencesStore>;
 //#endregion
@@ -74,7 +86,7 @@ const OMITTED_FIELDS: string[] = [
 export const userPreferencesStore =
   createPersistedSubscribedStore<UserPreferencesStore>(
     (set) => ({
-      _hasHydrated: false as boolean,
+      _hasHydrated: false,
       _init: async (state) => {
         // Set app theme on initialization.
         if (state.theme !== "system") Appearance.setColorScheme(state.theme);
@@ -84,7 +96,7 @@ export const userPreferencesStore =
           const usedLanguage = i18next.resolvedLanguage;
           // Ensured the resolved value exists.
           const exists = LANGUAGES.some((l) => l.code === usedLanguage);
-          state.setLanguage(exists && usedLanguage ? usedLanguage : "en");
+          set({ language: exists && usedLanguage ? usedLanguage : "en" });
         }
         set({ _hasHydrated: true });
       },
@@ -99,6 +111,25 @@ export const userPreferencesStore =
 
       nowPlayingDesign: "vinyl",
       setNowPlayingDesign: (newDesign) => set({ nowPlayingDesign: newDesign }),
+
+      tabsOrder: ["folder", "playlist", "track", "album", "artist"],
+      moveTab: (fromIndex: number, toIndex: number) => {
+        set(({ tabsOrder }) => ({
+          tabsOrder: moveArray(tabsOrder, { fromIndex, toIndex }),
+        }));
+      },
+      tabsVisibility: {
+        album: true,
+        artist: true,
+        folder: true,
+        playlist: true,
+        track: true,
+      },
+      toggleTabVisibility: (tab) => {
+        set(({ tabsVisibility }) => ({
+          tabsVisibility: { ...tabsVisibility, [tab]: !tabsVisibility[tab] },
+        }));
+      },
 
       minSeconds: 15,
 
@@ -133,6 +164,19 @@ export const userPreferencesStore =
 export const useUserPreferencesStore = <T>(
   selector: (state: UserPreferencesStore) => T,
 ): T => useStore(userPreferencesStore, selector);
+
+/** Return tabs that are displayed or hidden. */
+export function useTabsByVisibility() {
+  const tabsOrder = useUserPreferencesStore((state) => state.tabsOrder);
+  const tabsVisibility = useUserPreferencesStore(
+    (state) => state.tabsVisibility,
+  );
+
+  return {
+    displayedTabs: tabsOrder.filter((tabName) => tabsVisibility[tabName]),
+    hiddenTabs: tabsOrder.filter((tabName) => !tabsVisibility[tabName]),
+  };
+}
 //#endregion
 //#endregion
 

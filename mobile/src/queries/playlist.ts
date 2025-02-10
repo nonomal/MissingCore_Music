@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import type { TrackWithAlbum, playlists } from "@/db/schema";
+import type { playlists } from "~/db/schema";
 import {
   getPlaylistCover,
   formatForCurrentScreen,
   formatForMediaCard,
   sanitizePlaylistName,
-} from "@/db/utils";
+} from "~/db/utils";
 
 import {
   createPlaylist,
@@ -15,11 +15,11 @@ import {
   favoritePlaylist,
   moveInPlaylist,
   updatePlaylist,
-} from "@/api/playlist";
-import { Resynchronize } from "@/modules/media/services/Resynchronize";
+} from "~/api/playlist";
+import { Resynchronize } from "~/modules/media/services/Resynchronize";
 import { queries as q } from "./keyStore";
 
-import { wait } from "@/utils/promise";
+import { wait } from "~/utils/promise";
 
 //#region Queries
 /** Get specified playlist. */
@@ -65,8 +65,10 @@ export function usePlaylistsForCards() {
 export function useCreatePlaylist() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (args: { playlistName: string; tracks?: TrackWithAlbum[] }) =>
-      createPlaylist({ name: args.playlistName, tracks: args.tracks }),
+    mutationFn: (args: {
+      playlistName: string;
+      tracks?: Array<{ id: string }>;
+    }) => createPlaylist({ name: args.playlistName, tracks: args.tracks }),
     onSuccess: () => {
       // Invalidate all playlist & track queries.
       queryClient.invalidateQueries({ queryKey: q.playlists._def });
@@ -128,7 +130,7 @@ export function useUpdatePlaylist(playlistName: string) {
     mutationFn: (
       updatedValues: Partial<
         Omit<typeof playlists.$inferInsert, "isFavorite">
-      > & { tracks?: TrackWithAlbum[] },
+      > & { tracks?: Array<{ id: string }> },
     ) => updatePlaylist(playlistName, updatedValues),
     onSuccess: async (_, { name, artwork, tracks }) => {
       // Invalidate all playlist queries.

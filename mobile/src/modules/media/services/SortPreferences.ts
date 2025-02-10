@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import { useStore } from "zustand";
 
-import type { TrackWithAlbum } from "@/db/schema";
+import type { TrackWithAlbum } from "~/db/schema";
 
-import { createPersistedSubscribedStore } from "@/lib/zustand";
+import { createPersistedSubscribedStore } from "~/lib/zustand";
 
 /** Options for how we can order tracks. */
 export const OrderedByOptions = ["alphabetical", "modified"] as const;
@@ -32,7 +32,7 @@ interface SortPreferencesStore {
 export const sortPreferencesStore =
   createPersistedSubscribedStore<SortPreferencesStore>(
     (set) => ({
-      _hasHydrated: false as boolean,
+      _hasHydrated: false,
       _init: () => {
         set({ _hasHydrated: true });
       },
@@ -65,9 +65,11 @@ export const useSortPreferencesStore = <T>(
 //#endregion
 
 //#region Helpers
+type PartialTrack = Pick<TrackWithAlbum, "name" | "modificationTime">;
+
 /** Sort tracks based on filters for `/track` screen. */
-export function sortTracks(
-  tracks: TrackWithAlbum[],
+export function sortTracks<TData extends PartialTrack>(
+  tracks: TData[],
   /** If we want this to be reactive (ie: In a hook). */
   config?: { isAsc: boolean; orderedBy: (typeof OrderedByOptions)[number] },
 ) {
@@ -77,11 +79,10 @@ export function sortTracks(
 
   // FIXME: Once Hermes supports `toSorted` & `toReversed`, use those
   // instead of the in-place methods.
-  let sortedTracks: TrackWithAlbum[] = [...tracks];
-  // Order track by attribute.
-  if (orderedBy === "alphabetical") {
-    sortedTracks.sort((a, b) => a.name.localeCompare(b.name));
-  } else if (orderedBy === "modified") {
+  let sortedTracks = [...tracks];
+  // Order track by attribute (by default, tracks are sorted in alphabetical
+  // order in the database).
+  if (orderedBy === "modified") {
     sortedTracks.sort((a, b) => a.modificationTime - b.modificationTime);
   }
   // Sort tracks in descending order.
@@ -96,7 +97,8 @@ export function useSortTracks() {
   const orderedBy = useSortPreferencesStore((state) => state.orderedBy);
 
   return useCallback(
-    (data: TrackWithAlbum[]) => sortTracks(data, { isAsc, orderedBy }),
+    <TData extends PartialTrack>(data: TData[]) =>
+      sortTracks(data, { isAsc, orderedBy }),
     [isAsc, orderedBy],
   );
 }

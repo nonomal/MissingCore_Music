@@ -5,11 +5,12 @@ import { SheetProvider } from "react-native-actions-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import "@/screens/Sheets";
+import "~/screens/Sheets";
+import { UpcomingStoreProvider } from "~/screens/Sheets/TrackUpcoming/context";
 import { RouteHandlers } from "./RouteHandlers";
 import { ThemeProvider } from "./ThemeProvider";
 
-import { queryClient } from "@/lib/react-query";
+import { queryClient } from "~/lib/react-query";
 
 /** All providers used by the app. */
 export function AppProvider(props: { children: React.ReactNode }) {
@@ -20,10 +21,12 @@ export function AppProvider(props: { children: React.ReactNode }) {
       <GestureHandlerRootView>
         <QueryClientProvider client={queryClient}>
           <RouteHandlers />
-          <SheetProvider context="global">
-            <ChildrenWrapper {...props} />
-            <Toasts />
-          </SheetProvider>
+          <UpcomingStoreProvider>
+            <SheetProvider context="global">
+              <ChildrenWrapper {...props} />
+              <Toasts />
+            </SheetProvider>
+          </UpcomingStoreProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
     </ThemeProvider>
