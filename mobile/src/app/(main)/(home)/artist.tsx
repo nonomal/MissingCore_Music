@@ -1,23 +1,23 @@
 import { router } from "expo-router";
 
-import { useArtistsForIndex } from "@/queries/artist";
-import { StickyActionListLayout } from "@/layouts/StickyActionScroll";
+import { useArtistsForIndex } from "~/queries/artist";
+import { StickyActionListLayout } from "~/layouts/StickyActionScroll";
 
-import { useListPresets } from "@/components/Defaults";
-import { Em } from "@/components/Typography/StyledText";
-import { SearchResult } from "@/modules/search/components/SearchResult";
+import { useListPresets } from "~/components/Defaults";
+import { Em } from "~/components/Typography/StyledText";
+import { SearchResult } from "~/modules/search/components/SearchResult";
 
 /** Screen for `/artist` route. */
 export default function ArtistScreen() {
   const { isPending, data } = useArtistsForIndex();
   const listPresets = useListPresets({
     isPending,
-    emptyMsgKey: "response.noArtists",
+    emptyMsgKey: "err.msg.noArtists",
   });
 
   return (
     <StickyActionListLayout
-      titleKey="common.artists"
+      titleKey="term.artists"
       estimatedItemSize={56} // 48px Height + 8px Margin Top
       data={data}
       keyExtractor={(item) => (typeof item === "string" ? item : item.name)}

@@ -1,8 +1,8 @@
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "~/hooks/useTheme";
 
-import { Sheet } from "@/components/Sheet";
-import { SearchEngine } from "@/modules/search/components/SearchEngine";
-import type { SearchCallbacks } from "@/modules/search/types";
+import { Sheet } from "~/components/Sheet";
+import { SearchEngine } from "~/modules/search/components/SearchEngine";
+import type { SearchCallbacks } from "~/modules/search/types";
 
 /** List of media we want to appear in the search. */
 const searchScope = ["album", "track"] as const;
@@ -13,7 +13,7 @@ export default function AddMusicSheet(props: {
 }) {
   const { canvasAlt } = useTheme();
   return (
-    <Sheet id="AddMusicSheet" titleKey="title.musicAdd" snapTop>
+    <Sheet id="AddMusicSheet" titleKey="feat.search.extra.musicAdd" snapTop>
       <SearchEngine
         searchScope={searchScope}
         callbacks={props.payload.callbacks}

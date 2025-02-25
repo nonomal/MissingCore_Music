@@ -145,7 +145,7 @@ if (!findProperty('music.CREATE_PRIVACY_BUILD')?.toBoolean()) {
         // Enable auto-installation of Sentry components (sentry-android SDK and okhttp, timber and fragment integrations).
         // Default is enabled.
         autoInstallation {
-        enabled = false
+            enabled = false
         }
 
         // Disables or enables dependencies metadata reporting for Sentry.
@@ -193,8 +193,8 @@ android {
         applicationId 'com.cyanchill.missingcore.music'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1005
-        versionName "2.0.1"
+        versionCode 1013
+        versionName "2.1.4"
     }
     /**
      * https://developer.android.com/build/configure-apk-splits

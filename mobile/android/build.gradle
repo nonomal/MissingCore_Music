@@ -2,9 +2,9 @@
 
 buildscript {
     ext {
-        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
-        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '23')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
+        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'
+        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '24')
+        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')
         targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
         kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.23'
 
@@ -22,7 +22,7 @@ buildscript {
         // If `music.CREATE_PRIVACY_BUILD` defined in `gradle.properties`
         // is `true`, we don't run this code.
         if (!findProperty('music.CREATE_PRIVACY_BUILD')?.toBoolean()) {
-            classpath('io.sentry:sentry-android-gradle-plugin:4.2.0')
+            classpath('io.sentry:sentry-android-gradle-plugin:4.14.1')
         }
     }
 }

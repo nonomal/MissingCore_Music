@@ -7,34 +7,34 @@ import { GestureDetector } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { useProgress } from "react-native-track-player";
 
-import { Favorite } from "@/icons/Favorite";
-import { LibraryMusic } from "@/icons/LibraryMusic";
-import { MoreVert } from "@/icons/MoreVert";
-import { VolumeMute } from "@/icons/VolumeMute";
-import { VolumeUp } from "@/icons/VolumeUp";
-import { useFavoriteTrack, useTrack } from "@/queries/track";
-import { useMusicStore } from "@/modules/media/services/Music";
-import { MusicControls } from "@/modules/media/services/Playback";
-import { useSeekStore } from "@/screens/NowPlaying/SeekService";
-import { useVinylSeekbar } from "@/screens/NowPlaying/useVinylSeekbar";
-import { useUserPreferencesStore } from "@/services/UserPreferences";
+import { Favorite } from "~/icons/Favorite";
+import { LibraryMusic } from "~/icons/LibraryMusic";
+import { MoreVert } from "~/icons/MoreVert";
+import { VolumeMute } from "~/icons/VolumeMute";
+import { VolumeUp } from "~/icons/VolumeUp";
+import { useFavoriteTrack, useTrack } from "~/queries/track";
+import { useMusicStore } from "~/modules/media/services/Music";
+import { MusicControls } from "~/modules/media/services/Playback";
+import { useSeekStore } from "~/screens/NowPlaying/SeekService";
+import { useVinylSeekbar } from "~/screens/NowPlaying/useVinylSeekbar";
+import { useUserPreferencesStore } from "~/services/UserPreferences";
 
-import { mutateGuard } from "@/lib/react-query";
-import { formatSeconds } from "@/utils/number";
-import { Marquee } from "@/components/Containment/Marquee";
-import { IconButton } from "@/components/Form/Button";
-import { Slider } from "@/components/Form/Slider";
-import { Back } from "@/components/Transition/Back";
-import { StyledText } from "@/components/Typography/StyledText";
+import { mutateGuard } from "~/lib/react-query";
+import { formatSeconds } from "~/utils/number";
+import { Marquee } from "~/components/Containment/Marquee";
+import { IconButton } from "~/components/Form/Button";
+import { Slider } from "~/components/Form/Slider";
+import { Back } from "~/components/Transition/Back";
+import { StyledText } from "~/components/Typography/StyledText";
 import {
   NextButton,
   PlayToggleButton,
   PreviousButton,
   RepeatButton,
   ShuffleButton,
-} from "@/modules/media/components/MediaControls";
-import { MediaImage } from "@/modules/media/components/MediaImage";
-import { Vinyl } from "@/modules/media/components/Vinyl";
+} from "~/modules/media/components/MediaControls";
+import { MediaImage } from "~/modules/media/components/MediaImage";
+import { Vinyl } from "~/modules/media/components/Vinyl";
 
 /** Screen for `/now-playing` route. */
 export default function NowPlayingScreen() {
@@ -113,7 +113,7 @@ function VinylSeekBar(props: { source: string | null; size: number }) {
   return (
     <GestureDetector gesture={seekGesture}>
       <Animated.View onLayout={initCenter} style={vinylStyle}>
-        <Vinyl {...props} />
+        <Vinyl onPress={MusicControls.playToggle} {...props} />
       </Animated.View>
     </GestureDetector>
   );
@@ -199,7 +199,7 @@ function VolumeSlider() {
         <Slider
           value={savedVolume}
           max={1}
-          onChange={(newPos) => setVolume(newPos)}
+          onChange={setVolume}
           thumbSize={12}
         />
       </View>
@@ -224,7 +224,7 @@ function BottomAppBar({ trackId }: { trackId: string }) {
     <View className="flex-row items-center justify-end gap-2 pt-2">
       <IconButton
         kind="ripple"
-        accessibilityLabel={t(`common.${isFav ? "unF" : "f"}avorite`)}
+        accessibilityLabel={t(`term.${isFav ? "unF" : "f"}avorite`)}
         onPress={() => mutateGuard(favoriteTrack, !data?.isFavorite)}
         rippleRadius={24}
         className="p-2"
@@ -233,7 +233,7 @@ function BottomAppBar({ trackId }: { trackId: string }) {
       </IconButton>
       <IconButton
         kind="ripple"
-        accessibilityLabel={t("title.upcoming")}
+        accessibilityLabel={t("term.upcoming")}
         onPress={() => SheetManager.show("TrackUpcomingSheet")}
         rippleRadius={24}
         className="p-2"

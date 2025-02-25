@@ -1,14 +1,14 @@
 import {
   OrderedByOptions,
   useSortPreferencesStore,
-} from "@/modules/media/services/SortPreferences";
+} from "~/modules/media/services/SortPreferences";
 
-import { FlatList } from "@/components/Defaults";
-import { Button } from "@/components/Form/Button";
-import { Radio } from "@/components/Form/Selection";
-import { Switch } from "@/components/Form/Switch";
-import { Sheet } from "@/components/Sheet";
-import { TStyledText } from "@/components/Typography/StyledText";
+import { FlatList } from "~/components/Defaults";
+import { Button } from "~/components/Form/Button";
+import { Radio } from "~/components/Form/Selection";
+import { Switch } from "~/components/Form/Switch";
+import { Sheet } from "~/components/Sheet";
+import { TStyledText } from "~/components/Typography/StyledText";
 
 /** Sheet allowing us visually change the sort order on the `/track` screen. */
 export default function TrackSortSheet() {
@@ -20,11 +20,11 @@ export default function TrackSortSheet() {
   return (
     <Sheet
       id="TrackSortSheet"
-      titleKey="title.sort"
+      titleKey="feat.modalSort.title"
       contentContainerClassName="gap-4"
     >
       <Button onPress={toggleIsAsc} className="flex-row justify-between">
-        <TStyledText textKey="sortModal.asc" className="shrink" />
+        <TStyledText textKey="feat.modalSort.extra.asc" className="shrink" />
         <Switch enabled={isAsc} />
       </Button>
       <FlatList
@@ -35,7 +35,7 @@ export default function TrackSortSheet() {
             selected={item === orderedBy}
             onSelect={() => setOrderedBy(item)}
           >
-            <TStyledText textKey={`sortModal.${item}`} />
+            <TStyledText textKey={`feat.modalSort.extra.${item}`} />
           </Radio>
         )}
         contentContainerClassName="gap-1"

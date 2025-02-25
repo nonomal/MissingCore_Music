@@ -7,22 +7,22 @@ import { eq, inArray } from "drizzle-orm";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 
-import { db } from "@/db";
-import { albums, artists, invalidTracks, tracks } from "@/db/schema";
+import { db } from "~/db";
+import { albums, artists, invalidTracks, tracks } from "~/db/schema";
 
-import { getAlbums, upsertAlbum } from "@/api/album";
-import { createArtist } from "@/api/artist";
-import { getSaveErrors } from "@/api/setting";
-import { createTrack, deleteTrack, getTracks, updateTrack } from "@/api/track";
-import { userPreferencesStore } from "@/services/UserPreferences";
-import { Queue, musicStore } from "@/modules/media/services/Music";
-import { RecentList } from "@/modules/media/services/RecentList";
+import { getAlbums, upsertAlbum } from "~/api/album";
+import { createArtist } from "~/api/artist";
+import { getSaveErrors } from "~/api/setting";
+import { createTrack, deleteTrack, getTracks, updateTrack } from "~/api/track";
+import { userPreferencesStore } from "~/services/UserPreferences";
+import { Queue, musicStore } from "~/modules/media/services/Music";
+import { RecentList } from "~/modules/media/services/RecentList";
 import { onboardingStore } from "../services/Onboarding";
 
-import { clearAllQueries } from "@/lib/react-query";
-import { addTrailingSlash, removeFileExtension } from "@/utils/string";
-import { Stopwatch } from "@/utils/debug";
-import { BATCH_PRESETS, batch } from "@/utils/promise";
+import { clearAllQueries } from "~/lib/react-query";
+import { addTrailingSlash, removeFileExtension } from "~/utils/string";
+import { Stopwatch } from "~/utils/debug";
+import { BATCH_PRESETS, batch } from "~/utils/promise";
 import { savePathComponents } from "./folder";
 
 //#region Saving Function
@@ -30,14 +30,8 @@ import { savePathComponents } from "./folder";
 export async function findAndSaveAudio() {
   const stopwatch = new Stopwatch();
 
-  // Initiate the track saving phase.
-  onboardingStore.setState({
-    phase: "tracks",
-    prevSaved: 0,
-    unstaged: 0,
-    staged: 0,
-    saveErrors: 0,
-  });
+  // Reset tracked values when saving/updating tracks in onboarding store.
+  onboardingStore.setState({ staged: 0, saveErrors: 0 });
 
   const { listAllow, listBlock, minSeconds } = userPreferencesStore.getState();
   const usedDirs =
@@ -75,7 +69,10 @@ export async function findAndSaveAudio() {
   );
 
   // Get relevant entries inside our database.
-  const allTracks = await getTracks();
+  const allTracks = await getTracks({
+    columns: ["id", "modificationTime", "uri"],
+    withAlbum: false,
+  });
   const allInvalidTracks = await getSaveErrors();
   onboardingStore.setState({ prevSaved: allTracks.length });
 
@@ -110,12 +107,14 @@ export async function findAndSaveAudio() {
   onboardingStore.setState({
     unstaged: discoveredTracks.length - unmodifiedTracks.size,
   });
-  stopwatch.lapTime();
+  console.log(`Determined unstaged content in ${stopwatch.lapTime()}.`);
 
   // Create track entries from the minimum amount of data.
   const unstagedTracks = discoveredTracks.filter(
     ({ id }) => !unmodifiedTracks.has(id),
   );
+  // Set the current phase to `tracks` if we find tracks that need saving/updating.
+  if (unstagedTracks.length > 0) onboardingStore.setState({ phase: "tracks" });
   await batch({
     data: unstagedTracks,
     batchAmount: BATCH_PRESETS.PROGRESS,
@@ -141,28 +140,23 @@ export async function findAndSaveAudio() {
           }
         }
       } catch (err) {
-        const errObj =
-          err instanceof Error
-            ? err
-            : {
-                name: "UnknownError",
-                message: "Rejected for unknown reasons.",
-              };
+        const isError = err instanceof Error;
+        const errorInfo = {
+          errorName: isError ? err.name : "UnknownError",
+          errorMessage: isError ? err.message : "Rejected for unknown reasons.",
+        };
         // We may end up here if the track at the given uri doesn't exist anymore.
-        console.log(`[Track ${id}] ${errObj.message}`);
+        console.log(`[Track ${id}] ${errorInfo.errorMessage}`);
 
-        // Delete the track and its relation, then add it to `InvalidTrack`.
+        // Delete the track and its relation, then manually add it to
+        // `InvalidTrack` schema (as the track may not exist prior).
         await deleteTrack(id);
         await db
           .insert(invalidTracks)
-          .values({
-            ...{ id, uri, modificationTime },
-            errorName: errObj.name,
-            errorMessage: errObj.message,
-          })
+          .values({ id, uri, modificationTime, ...errorInfo })
           .onConflictDoUpdate({
             target: invalidTracks.id,
-            set: { modificationTime },
+            set: { modificationTime, ...errorInfo },
           });
 
         throw new Error(id);
@@ -179,6 +173,7 @@ export async function findAndSaveAudio() {
   console.log(
     `Found/updated ${staged} tracks & encountered ${saveErrors} errors in ${stopwatch.lapTime()}.`,
   );
+  console.log(`Completed finding & saving audio in ${stopwatch.stop()}`);
 
   return {
     foundFiles: discoveredTracks,
@@ -199,35 +194,32 @@ async function getTrackEntry({
   modificationTime,
   filename,
 }: MediaLibrary.Asset) {
-  const { bitrate, sampleRate, ...meta } = await getMetadata(
-    uri,
-    wantedMetadata,
-  );
+  const { bitrate, sampleRate, ...t } = await getMetadata(uri, wantedMetadata);
   const assetInfo = await FileSystem.getInfoAsync(uri);
 
   // Add new artists to the database.
   await Promise.allSettled(
-    [meta.artist, meta.albumArtist]
-      .filter((name) => name !== null)
-      .map((name) => createArtist({ name })),
+    [t.artist, t.albumArtist]
+      .filter((name) => name !== null && name.trim() !== "")
+      .map((name) => createArtist({ name: name!.trim() })),
   );
 
   // Add new album to the database. The unique key on `Album` covers the rare
   // case where an artist releases multiple albums with the same name.
   let albumId: string | null = null;
-  if (!!meta.albumTitle && !!meta.albumArtist) {
+  if (!!t.albumTitle?.trim() && !!t.albumArtist?.trim()) {
     const newAlbum = await upsertAlbum({
-      name: meta.albumTitle,
-      artistName: meta.albumArtist,
-      releaseYear: meta.year,
+      name: t.albumTitle.trim(),
+      artistName: t.albumArtist.trim(),
+      releaseYear: t.year ?? -1,
     });
     if (newAlbum) albumId = newAlbum.id;
   }
 
   return {
-    ...{ id, name: meta.title ?? removeFileExtension(filename) },
-    ...{ artistName: meta.artist, albumId, track: meta.trackNumber },
-    ...{ disc: meta.discNumber, format: meta.sampleMimeType, bitrate },
+    ...{ id, name: t.title?.trim() || removeFileExtension(filename) },
+    ...{ artistName: t.artist?.trim() || null, albumId, track: t.trackNumber },
+    ...{ disc: t.discNumber, format: t.sampleMimeType, bitrate },
     ...{ sampleRate, duration, uri, modificationTime, fetchedArt: false },
     ...{ size: assetInfo.exists ? (assetInfo.size ?? 0) : 0 },
   };
@@ -271,7 +263,7 @@ export async function cleanupDatabase(usedTrackIds: string[]) {
 /** Remove any albums or artists that aren't used. */
 export async function removeUnusedCategories() {
   // Remove unused albums.
-  const allAlbums = await getAlbums();
+  const allAlbums = await getAlbums({ columns: ["id"], trackColumns: ["id"] });
   const unusedAlbumIds = allAlbums
     .filter(({ tracks }) => tracks.length === 0)
     .map(({ id }) => id);
@@ -279,6 +271,7 @@ export async function removeUnusedCategories() {
 
   // Remove unused artists.
   const allArtists = await db.query.artists.findMany({
+    columns: { name: true },
     with: {
       albums: { columns: { id: true } },
       tracks: { columns: { id: true } },

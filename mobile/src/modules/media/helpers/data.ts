@@ -3,20 +3,18 @@
  * Player Interface.
  */
 
-import { inArray } from "drizzle-orm";
 import type { AddTrack } from "react-native-track-player";
 
-import type { TrackWithAlbum } from "@/db/schema";
-import { tracks } from "@/db/schema";
-import { getTrackCover } from "@/db/utils";
+import type { TrackWithAlbum } from "~/db/schema";
+import { getTrackCover } from "~/db/utils";
 
-import i18next from "@/modules/i18n";
-import { getAlbum } from "@/api/album";
-import { getArtist } from "@/api/artist";
-import { getFolderTracks } from "@/api/folder";
-import { getPlaylist, getSpecialPlaylist } from "@/api/playlist";
-import { getTracks } from "@/api/track";
+import i18next from "~/modules/i18n";
+import { getAlbum } from "~/api/album";
+import { getArtist } from "~/api/artist";
+import { getFolderTracks } from "~/api/folder";
+import { getPlaylist, getSpecialPlaylist } from "~/api/playlist";
 
+import { getSafeUri } from "~/utils/string";
 import type { ReservedPlaylistName } from "../constants";
 import { ReservedNames, ReservedPlaylists } from "../constants";
 import type { PlayListSource } from "../types";
@@ -34,7 +32,7 @@ export function arePlaybackSourceEqual(
 /** Format track data to be used with the RNTP queue. */
 export function formatTrackforPlayer(track: TrackWithAlbum) {
   return {
-    url: track.uri,
+    url: getSafeUri(track.uri),
     artwork: getTrackCover(track) ?? undefined,
     title: track.name,
     artist: track.artistName ?? "No Artist",
@@ -48,17 +46,17 @@ export async function getSourceName({ type, id }: PlayListSource) {
   let name = "";
   try {
     if (ReservedNames.has(id)) {
-      name = i18next.t(
-        `common.${id === ReservedPlaylists.tracks ? "t" : "favoriteT"}racks`,
-      );
-    } else if (["artist", "playlist"].includes(type)) {
+      const tKey = id === ReservedPlaylists.tracks ? "t" : "favoriteT";
+      name = i18next.t(`term.${tKey}racks`);
+    } else if (type === "artist" || type === "playlist") {
       name = id;
     } else if (type === "folder") {
       // FIXME: At `-2` index due to the folder path (in `id`) ending with
       // a trailing slash.
       name = id.split("/").at(-2) ?? "";
     } else {
-      name = (await getAlbum(id)).name; // `type` should be `album`.
+      name = (await getAlbum(id, { columns: ["name"], withTracks: false }))
+        .name;
     }
   } catch {}
   return name;
@@ -89,11 +87,4 @@ export async function getTrackList({ type, id }: PlayListSource) {
   } catch {}
 
   return sortedTracks;
-}
-
-/** Get list of tracks from track ids. */
-export async function getTracksFromIds(trackIds: string[]) {
-  if (trackIds.length === 0) return [];
-  const unorderedTracks = await getTracks([inArray(tracks.id, trackIds)]);
-  return trackIds.map((tId) => unorderedTracks.find(({ id }) => id === tId)!);
 }

@@ -1,12 +1,12 @@
 import { FlashList } from "@shopify/flash-list";
 
-import { useFavoriteTracksForScreen } from "@/queries/favorite";
-import { useBottomActionsContext } from "@/hooks/useBottomActionsContext";
-import { CurrentListLayout } from "@/layouts/CurrentList";
+import { useFavoriteTracksForScreen } from "~/queries/favorite";
+import { useBottomActionsContext } from "~/hooks/useBottomActionsContext";
+import { CurrentListLayout } from "~/layouts/CurrentList";
 
-import { PagePlaceholder } from "@/components/Transition/Placeholder";
-import { ReservedPlaylists } from "@/modules/media/constants";
-import { useTrackListPreset } from "@/modules/media/components/Track";
+import { PagePlaceholder } from "~/components/Transition/Placeholder";
+import { ReservedPlaylists } from "~/modules/media/constants";
+import { useTrackListPreset } from "~/modules/media/components/Track";
 
 /** Screen for displaying favorited tracks. */
 export default function FavoriteTracksScreen() {
@@ -20,7 +20,7 @@ export default function FavoriteTracksScreen() {
   const { isPending, error, data } = useFavoriteTracksForScreen();
   const listPresets = useTrackListPreset({
     ...{ data: data?.tracks, trackSource },
-    emptyMsgKey: "response.noTracks",
+    emptyMsgKey: "err.msg.noTracks",
   });
 
   if (isPending || error) return <PagePlaceholder {...{ isPending }} />;

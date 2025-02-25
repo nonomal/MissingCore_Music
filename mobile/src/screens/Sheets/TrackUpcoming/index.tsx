@@ -1,17 +1,19 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getTrackCover } from "@/db/utils";
+import { getTrackCover } from "~/db/utils";
 
-import { Remove } from "@/icons/Remove";
-import { Queue, useMusicStore } from "@/modules/media/services/Music";
+import { Remove } from "~/icons/Remove";
+import { Queue, useMusicStore } from "~/modules/media/services/Music";
+import { useUpcomingStore } from "./store";
 
-import { Colors } from "@/constants/Styles";
-import { cn } from "@/lib/style";
-import { SheetsFlashList } from "@/components/Defaults";
-import { IconButton } from "@/components/Form/Button";
-import { Sheet } from "@/components/Sheet";
-import { Swipeable } from "@/components/Swipeable";
-import { SearchResult } from "@/modules/search/components/SearchResult";
+import { Colors } from "~/constants/Styles";
+import { cn } from "~/lib/style";
+import { SheetsFlashList } from "~/components/Defaults";
+import { IconButton } from "~/components/Form/Button";
+import { Sheet } from "~/components/Sheet";
+import { Swipeable } from "~/components/Swipeable";
+import { SearchResult } from "~/modules/search/components/SearchResult";
 
 /**
  * Sheet allowing us to see the upcoming tracks and remove tracks from
@@ -19,8 +21,11 @@ import { SearchResult } from "@/modules/search/components/SearchResult";
  */
 export default function TrackUpcomingSheet() {
   const { t } = useTranslation();
-  const trackList = useMusicStore((state) => state.currentTrackList);
-  const queueList = useMusicStore((state) => state.queuedTrackList);
+  const populateCurrentTrackList = useUpcomingStore(
+    (state) => state.populateCurrentTrackList,
+  );
+  const trackList = useUpcomingStore((state) => state.currentTrackList);
+  const queueList = useUpcomingStore((state) => state.queuedTrackList);
   const listIndex = useMusicStore((state) => state.listIdx);
   const repeat = useMusicStore((state) => state.repeat);
 
@@ -36,18 +41,24 @@ export default function TrackUpcomingSheet() {
       ? trackList.length + queueList.length
       : trackList.length - 1 - listIndex + queueList.length;
 
+  useEffect(() => {
+    populateCurrentTrackList();
+  }, [populateCurrentTrackList]);
+
   return (
     <Sheet
       id="TrackUpcomingSheet"
-      titleKey="title.upcoming"
+      titleKey="term.upcoming"
       snapTop
       contentContainerClassName="px-0"
     >
       <SheetsFlashList
         estimatedItemSize={52} // 48px Height + 4px Margin Top
         data={data}
-        keyExtractor={({ name }, index) => `${name}_${index}`}
+        keyExtractor={(item, index) => `${item?.name ?? ""}_${index}`}
         renderItem={({ item, index }) => {
+          if (item === undefined) return null;
+
           const itemContent = {
             title: item.name,
             description: item.artistName ?? "—",

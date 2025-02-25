@@ -8,7 +8,7 @@ import type { ActionSheetProps } from "react-native-actions-sheet";
 import ActionSheet from "react-native-actions-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { cn } from "@/lib/style";
+import { cn } from "~/lib/style";
 import { Marquee } from "./Containment/Marquee";
 import { StyledText } from "./Typography/StyledText";
 
@@ -74,8 +74,8 @@ export function Sheet({
 /** Header component to be used in `<Sheet />`. */
 function SheetHeader({ title }: { title?: string }) {
   return (
-    <View className="gap-2 pb-6">
-      <View className="mx-auto my-[10px] h-1 w-1/12 min-w-6 rounded-full bg-onSurface" />
+    <View className={cn("gap-2 px-4 pb-2", { "pb-6": !!title })}>
+      <View className="mx-auto my-[10px] h-1 w-8 rounded-full bg-onSurface" />
       {title ? (
         <Marquee center>
           <StyledText className="text-lg">{title}</StyledText>

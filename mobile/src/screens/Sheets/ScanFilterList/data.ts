@@ -6,11 +6,11 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
 
-import i18next from "@/modules/i18n";
-import { userPreferencesStore } from "@/services/UserPreferences";
+import i18next from "~/modules/i18n";
+import { userPreferencesStore } from "~/services/UserPreferences";
 
-import { ToastOptions } from "@/lib/toast";
-import { addTrailingSlash } from "@/utils/string";
+import { ToastOptions } from "~/lib/toast";
+import { addTrailingSlash } from "~/utils/string";
 
 const SAF = FileSystem.StorageAccessFramework;
 
@@ -42,7 +42,7 @@ export function validatePath(path: string) {
 export async function pickPath() {
   const permissions = await SAF.requestDirectoryPermissionsAsync();
   if (!permissions.granted) {
-    toast.error(i18next.t("response.actionCancel"), ToastOptions);
+    toast.error(i18next.t("err.msg.actionCancel"), ToastOptions);
     return;
   }
 

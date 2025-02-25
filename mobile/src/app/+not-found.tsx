@@ -1,10 +1,10 @@
 import { Stack, usePathname } from "expo-router";
 import { useAtomValue } from "jotai";
 
-import { prevRouteAtom } from "@/providers/RouteHandlers";
-import { IssueLayout } from "@/layouts/Issue";
+import { prevRouteAtom } from "~/providers/RouteHandlers";
+import { IssueLayout } from "~/layouts/Issue";
 
-import { List, ListItem } from "@/components/Containment/List";
+import { List, ListItem } from "~/components/Containment/List";
 
 /** Screen for unmatched route. */
 export default function NotFoundScreen() {
@@ -14,14 +14,18 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <IssueLayout issueType="unmatched">
+      <IssueLayout issueType="route">
         <List>
           <ListItem
-            titleKey="errorScreen.missing"
+            titleKey="err.flow.route.extra.missing"
             description={pathname}
             first
           />
-          <ListItem titleKey="errorScreen.from" description={prevRoute} last />
+          <ListItem
+            titleKey="err.flow.route.extra.from"
+            description={prevRoute}
+            last
+          />
         </List>
       </IssueLayout>
     </>

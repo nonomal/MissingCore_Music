@@ -13,20 +13,20 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { Schedule } from "@/icons/Schedule";
-import { useMusicStore } from "@/modules/media/services/Music";
-import { useTheme } from "@/hooks/useTheme";
+import { Schedule } from "~/icons/Schedule";
+import { useMusicStore } from "~/modules/media/services/Music";
+import { useTheme } from "~/hooks/useTheme";
 
-import { pickKeys } from "@/utils/object";
-import { capitalize, toLowerCase } from "@/utils/string";
-import { Marquee } from "@/components/Containment/Marquee";
-import { Divider } from "@/components/Divider";
-import { StyledText, TEm } from "@/components/Typography/StyledText";
-import { ReservedPlaylists } from "@/modules/media/constants";
-import { MediaImage } from "@/modules/media/components/MediaImage";
-import { MediaListControls } from "@/modules/media/components/MediaListControls";
-import { Vinyl } from "@/modules/media/components/Vinyl";
-import { arePlaybackSourceEqual } from "@/modules/media/helpers/data";
+import { pickKeys } from "~/utils/object";
+import { capitalize, toLowerCase } from "~/utils/string";
+import { Marquee } from "~/components/Containment/Marquee";
+import { Divider } from "~/components/Divider";
+import { StyledText, TEm } from "~/components/Typography/StyledText";
+import { ReservedPlaylists } from "~/modules/media/constants";
+import { MediaImage } from "~/modules/media/components/MediaImage";
+import { MediaListControls } from "~/modules/media/components/MediaListControls";
+import { Vinyl } from "~/modules/media/components/Vinyl";
+import { arePlaybackSourceEqual } from "~/modules/media/helpers/data";
 
 type SupportedMedia = "album" | "artist" | "playlist";
 type MediaListSource = { type: SupportedMedia; id: string };
@@ -57,12 +57,12 @@ export function CurrentListLayout(
         <View className="shrink grow justify-end">
           <TEm
             dim
-            textKey={`common.${toLowerCase(props.mediaSource.type)}`}
+            textKey={`term.${toLowerCase(props.mediaSource.type)}`}
             style={{ fontSize: 8 }}
           />
           <Marquee color={canvas}>
             <StyledText>
-              {isFavorite ? t("common.favoriteTracks") : props.title}
+              {isFavorite ? t("term.favoriteTracks") : props.title}
             </StyledText>
           </Marquee>
           {props.artist ? (
@@ -113,7 +113,7 @@ function ContentImage({
 
   return (
     <Pressable
-      aria-label={t("playlist.artworkChange")}
+      aria-label={t("feat.artwork.extra.change")}
       delayLongPress={100}
       onLongPress={() => {
         SheetManager.show(`${capitalize(type)}ArtworkSheet`, {

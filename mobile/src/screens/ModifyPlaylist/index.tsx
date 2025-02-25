@@ -4,33 +4,32 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BackHandler, Modal, Pressable, View } from "react-native";
 import { SheetManager } from "react-native-actions-sheet";
-import type { DragListRenderItemInfo } from "react-native-draglist";
-import DragList from "react-native-draglist";
+import type { DragListRenderItemInfo } from "react-native-draglist/dist/FlashList";
 
-import type { TrackWithAlbum } from "@/db/schema";
+import type { SlimTrackWithAlbum } from "~/db/slimTypes";
 
-import { Add } from "@/icons/Add";
-import { Cancel } from "@/icons/Cancel";
-import { CheckCircle } from "@/icons/CheckCircle";
-import { Check } from "@/icons/Check";
-import { Remove } from "@/icons/Remove";
-import { useDeletePlaylist } from "@/queries/playlist";
-import { useTheme } from "@/hooks/useTheme";
+import { Add } from "~/icons/Add";
+import { Cancel } from "~/icons/Cancel";
+import { CheckCircle } from "~/icons/CheckCircle";
+import { Check } from "~/icons/Check";
+import { Remove } from "~/icons/Remove";
+import { useDeletePlaylist } from "~/queries/playlist";
+import { useTheme } from "~/hooks/useTheme";
+import { areRenderItemPropsEqual } from "~/lib/react-native-draglist";
 import type { InitStoreProps } from "./context";
 import { PlaylistStoreProvider, usePlaylistStore } from "./context";
 
-import { Colors } from "@/constants/Styles";
-import { mutateGuard } from "@/lib/react-query";
-import { cn } from "@/lib/style";
-import { pickKeys } from "@/utils/object";
-import { wait } from "@/utils/promise";
-import { useListPresets } from "@/components/Defaults";
-import { IconButton } from "@/components/Form/Button";
-import { TextInput } from "@/components/Form/Input";
-import type { SwipeableRef } from "@/components/Swipeable";
-import { Swipeable } from "@/components/Swipeable";
-import { StyledText, TStyledText } from "@/components/Typography/StyledText";
-import { SearchResult } from "@/modules/search/components/SearchResult";
+import { Colors } from "~/constants/Styles";
+import { mutateGuard } from "~/lib/react-query";
+import { cn } from "~/lib/style";
+import { wait } from "~/utils/promise";
+import { FlashDragList } from "~/components/Defaults";
+import { IconButton } from "~/components/Form/Button";
+import { TextInput } from "~/components/Form/Input";
+import type { SwipeableRef } from "~/components/Swipeable";
+import { Swipeable } from "~/components/Swipeable";
+import { StyledText, TStyledText } from "~/components/Typography/StyledText";
+import { SearchResult } from "~/modules/search/components/SearchResult";
 
 /** Resuable screen to modify (create or edit) a playlist. */
 export function ModifyPlaylist(props: InitStoreProps) {
@@ -58,7 +57,7 @@ function ScreenConfig() {
   return (
     <Stack.Screen
       options={{
-        headerTitle: t(`playlist.${mode ?? "create"}`),
+        headerTitle: t(`feat.playlist.extra.${mode ?? "create"}`),
         // Hacky solution to disable the back button when submitting.
         headerLeft: isSubmitting ? () => undefined : undefined,
         headerRight: () => (
@@ -79,12 +78,10 @@ function ScreenConfig() {
 
 //#region Page Content
 /** Items rendered in the `<DragList />`. */
-type RenderItemProps = DragListRenderItemInfo<TrackWithAlbum>;
+type RenderItemProps = DragListRenderItemInfo<SlimTrackWithAlbum>;
 
 /** Contains the logic for editing the playlist name and tracks. */
 function PageContent() {
-  const listPresets = useListPresets({ emptyMsgKey: "response.noTracks" });
-
   const tracks = usePlaylistStore((state) => state.tracks);
   const isUnchanged = usePlaylistStore((state) => state.isUnchanged);
   const isSubmitting = usePlaylistStore((state) => state.isSubmitting);
@@ -118,15 +115,15 @@ function PageContent() {
       needsOffscreenAlphaCompositing
       className={cn("flex-1", { "opacity-25": isSubmitting })}
     >
-      <DragList
+      <FlashDragList
         estimatedItemSize={56} // 48px Height + 8px Margin Top
         data={tracks}
         keyExtractor={({ id }) => id}
         renderItem={renderItem}
         onReordered={moveTrack}
         ListHeaderComponent={ListHeaderComponent}
-        {...listPresets}
         contentContainerClassName="py-4" // Applies to the internal `<FlashList />`.
+        emptyMsgKey="err.msg.noTracks"
       />
     </View>
   );
@@ -134,81 +131,65 @@ function PageContent() {
 
 //#region renderItem
 /** Item rendered in the `<DragList />`. */
-const RenderItem = memo(function RenderItem({
-  item,
-  ...info
-}: RenderItemProps) {
-  const { t } = useTranslation();
-  const swipeableRef = useRef<SwipeableRef>(null);
-  const [lastItemId, setLastItemId] = useState(item.id);
+const RenderItem = memo(
+  function RenderItem({ item, ...info }: RenderItemProps) {
+    const { t } = useTranslation();
+    const swipeableRef = useRef<SwipeableRef>(null);
+    const [lastItemId, setLastItemId] = useState(item.id);
 
-  const removeTrack = usePlaylistStore((state) => state.removeTrack);
+    const removeTrack = usePlaylistStore((state) => state.removeTrack);
 
-  const onPress = useCallback(
-    () => removeTrack(item.id),
-    [item.id, removeTrack],
-  );
+    const onPress = useCallback(
+      () => removeTrack(item.id),
+      [item.id, removeTrack],
+    );
 
-  if (item.id !== lastItemId) {
-    setLastItemId(item.id);
-    if (swipeableRef.current) swipeableRef.current.resetIfNeeded();
-  }
+    if (item.id !== lastItemId) {
+      setLastItemId(item.id);
+      if (swipeableRef.current) swipeableRef.current.resetIfNeeded();
+    }
 
-  return (
-    <Pressable
-      delayLongPress={100}
-      onLongPress={info.onDragStart}
-      onPressOut={info.onDragEnd}
-      className={cn("group", { "mt-2": info.index > 0 })}
-    >
-      <Swipeable
-        // @ts-expect-error - Error assigning ref to class component.
-        ref={swipeableRef}
-        enabled={!info.isDragging}
-        renderRightActions={() =>
-          info.isActive ? undefined : (
-            <IconButton
-              accessibilityLabel={t("template.entryRemove", {
-                name: item.name,
-              })}
-              onPress={onPress}
-              className="mr-4 bg-red"
-            >
-              <Remove color={Colors.neutral100} />
-            </IconButton>
-          )
-        }
+    return (
+      <Pressable
+        delayLongPress={100}
+        onLongPress={info.onDragStart}
+        onPressOut={info.onDragEnd}
+        className={cn("group", { "mt-2": info.index > 0 })}
       >
-        <SearchResult
-          type="track"
-          title={item.name}
-          description={item.artistName ?? "—"}
-          imageSource={item.artwork}
-          className={cn(
-            "mx-4 rounded-sm bg-canvas pr-4 group-active:bg-surface/50",
-            { "!bg-surface": info.isActive },
-          )}
-        />
-      </Swipeable>
-    </Pressable>
-  );
-}, areRenderItemPropsEqual);
-
-const RenderItemPrimitiveProps = ["index", "isActive", "isDragging"] as const;
-
-function areRenderItemPropsEqual(
-  oldProps: RenderItemProps,
-  newProps: RenderItemProps,
-) {
-  const primitiveProps = pickKeys(oldProps, RenderItemPrimitiveProps);
-  return (
-    oldProps.item.id === newProps.item.id &&
-    Object.entries(primitiveProps).every(
-      // @ts-expect-error - Non-existent type conflicts.
-      ([key, value]) => value === newProps[key],
-    )
-  );
-}
+        <Swipeable
+          // @ts-expect-error - Error assigning ref to class component.
+          ref={swipeableRef}
+          enabled={!info.isDragging}
+          renderRightActions={() =>
+            info.isActive ? undefined : (
+              <IconButton
+                accessibilityLabel={t("template.entryRemove", {
+                  name: item.name,
+                })}
+                onPress={onPress}
+                className="mr-4 bg-red"
+              >
+                <Remove color={Colors.neutral100} />
+              </IconButton>
+            )
+          }
+        >
+          <SearchResult
+            type="track"
+            title={item.name}
+            description={item.artistName ?? "—"}
+            imageSource={item.artwork}
+            className={cn(
+              "mx-4 rounded-sm bg-canvas pr-4 group-active:bg-surface/50",
+              { "!bg-surface": info.isActive },
+            )}
+          />
+        </Swipeable>
+      </Pressable>
+    );
+  },
+  areRenderItemPropsEqual((o, n) => o.item.id === n.item.id),
+);
 //#endregion
 
 //#region ListHeaderComponent
@@ -230,7 +211,7 @@ function ListHeaderComponent() {
           editable={!isSubmitting}
           defaultValue={initialName}
           onChangeText={setPlaylistName}
-          placeholder={t("form.placeholder.playlistName")}
+          placeholder={t("feat.playlist.extra.name")}
           className="shrink grow border-b border-foreground/60"
         />
         <View
@@ -243,10 +224,10 @@ function ListHeaderComponent() {
         </View>
       </View>
       <View className="mb-2 ml-4 mr-1 mt-6 shrink grow flex-row items-center justify-between">
-        <TStyledText textKey="common.tracks" />
+        <TStyledText textKey="term.tracks" />
         <IconButton
           kind="ripple"
-          accessibilityLabel={t("playlist.add")}
+          accessibilityLabel={t("feat.modalTrack.extra.addToPlaylist")}
           disabled={isSubmitting}
           onPress={() =>
             SheetManager.show("AddMusicSheet", {
@@ -327,11 +308,14 @@ function DeleteWorkflow() {
         className="min-h-12 justify-center bg-surface disabled:opacity-25"
       >
         <StyledText className="text-center text-sm text-red">
-          {t("playlist.delete").toLocaleUpperCase()}
+          {t("feat.playlist.extra.delete").toLocaleUpperCase()}
         </StyledText>
       </Pressable>
       <ModalBase visible={lastChance}>
-        <TStyledText textKey="playlist.delete" className="pt-8 text-center" />
+        <TStyledText
+          textKey="feat.playlist.extra.delete"
+          className="pt-8 text-center"
+        />
         <View className="flex-row justify-end gap-4">
           <ModalButton
             textKey="form.cancel"
