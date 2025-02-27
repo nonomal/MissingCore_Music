@@ -1,17 +1,17 @@
-import * as Sentry from "@sentry/react-native";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import Bootsplash from "react-native-bootsplash";
+import TrackPlayer from "react-native-track-player";
 
-import { musicStore } from "@/modules/media/services/Music";
-import { useLoadResources } from "@/hooks/useLoadResources";
-import { ErrorBoundary } from "@/screens/ErrorBoundary";
-import { OnboardingScreen } from "@/screens/Onboarding";
-import { AppProvider } from "@/providers";
+import { musicStore } from "~/modules/media/services/Music";
+import { useLoadResources } from "~/hooks/useLoadResources";
+import { ErrorBoundary } from "~/screens/ErrorBoundary";
+import { OnboardingScreen } from "~/screens/Onboarding";
+import { AppProvider } from "~/providers";
 
-import "@/resources/global.css";
-import "@/modules/i18n"; // Make sure translations are bundled.
-import { TopAppBar, TopAppBarMarquee } from "@/components/TopAppBar";
+import "~/resources/global.css";
+import "~/modules/i18n"; // Make sure translations are bundled.
+import { TopAppBar, TopAppBarMarquee } from "~/components/TopAppBar";
 
 // Catch any errors thrown by the Layout component.
 export { ErrorBoundary };
@@ -21,26 +21,39 @@ export const unstable_settings = {
   initialRouteName: "(main)/(home)",
 };
 
-Sentry.init({
-  dsn: "https://bbd726405356cdfb20b85f5f924fd3e3@o4507687432617984.ingest.us.sentry.io/4507687447101440",
-  ignoreErrors: [
-    /Missing .* permissions/,
-    // Expo development errors:
-    "Unable to activate keep awake",
-  ],
-});
+let Sentry: any;
+const WithSentry = process.env.EXPO_PUBLIC_PRIVACY_BUILD !== "true";
+
+if (WithSentry) {
+  // Dynamically import Sentry if we want to use it.
+  Sentry = require("@sentry/react-native");
+  Sentry.init({
+    dsn: "https://bbd726405356cdfb20b85f5f924fd3e3@o4507687432617984.ingest.us.sentry.io/4507687447101440",
+    ignoreErrors: [
+      /Missing .* permissions/,
+      // Expo development errors:
+      "Unable to activate keep awake",
+    ],
+  });
+}
 
 export default function RootLayout() {
   const { isLoaded, error } = useLoadResources();
+
+  // Ensure the RNTP service closes on app close.
+  useEffect(() => {
+    return () => {
+      TrackPlayer.reset().catch();
+    };
+  }, []);
 
   useEffect(() => {
     if (error) {
       // Display error message to user if encountered.
       Bootsplash.hide();
       musicStore.getState().resetOnCrash();
-      // Send error message to Sentry. Doesn't send if you followed the
-      // "Personal Privacy Build" documentation.
-      if (!__DEV__) Sentry.captureException(error);
+      // Send error message to Sentry.
+      if (WithSentry && !__DEV__) Sentry.captureException(error);
     }
   }, [error]);
 
@@ -74,6 +87,7 @@ function RootLayoutNav() {
           options={{
             animation: "slide_from_bottom",
             header: TopAppBarMarquee,
+            headerTransparent: true,
             headerShown: true,
             headerTitle: "",
           }}

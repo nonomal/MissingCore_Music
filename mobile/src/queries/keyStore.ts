@@ -1,21 +1,21 @@
 import { createQueryKeyStore } from "@lukemorales/query-key-factory";
 import { eq } from "drizzle-orm";
 
-import { albums, playlists } from "@/db/schema";
+import { albums, playlists } from "~/db/schema";
 
-import { getAlbum, getAlbums } from "@/api/album";
-import { getArtist, getArtistAlbums, getArtists } from "@/api/artist";
-import { getFolder } from "@/api/folder";
-import { getPlaylist, getPlaylists, getSpecialPlaylist } from "@/api/playlist";
+import { getAlbum, getAlbums } from "~/api/album";
+import { getArtist, getArtistAlbums, getArtists } from "~/api/artist";
+import { getFolder } from "~/api/folder";
+import { getPlaylist, getPlaylists, getSpecialPlaylist } from "~/api/playlist";
 import {
   getDatabaseSummary,
   getLatestRelease,
   getSaveErrors,
   getStorageSummary,
-} from "@/api/setting";
-import { getTrack, getTrackPlaylists, getTracks } from "@/api/track";
+} from "~/api/setting";
+import { getTrack, getTrackPlaylists, getTracks } from "~/api/track";
 
-import { ReservedPlaylists } from "@/modules/media/constants";
+import { ReservedPlaylists } from "~/modules/media/constants";
 
 /** All of the reusuable query keys. */
 export const queries = createQueryKeyStore({
@@ -23,7 +23,11 @@ export const queries = createQueryKeyStore({
   albums: {
     all: {
       queryKey: null,
-      queryFn: () => getAlbums(),
+      queryFn: () =>
+        getAlbums({
+          columns: ["id", "name", "artistName", "artwork"],
+          trackColumns: ["id"],
+        }),
     },
     detail: (albumId: string) => ({
       queryKey: [albumId],
@@ -34,7 +38,11 @@ export const queries = createQueryKeyStore({
   artists: {
     all: {
       queryKey: null,
-      queryFn: () => getArtists(),
+      queryFn: () =>
+        getArtists({
+          columns: ["name", "artwork"],
+          withTracks: false,
+        }),
     },
     detail: (artistName: string) => ({
       queryKey: [artistName],
@@ -66,7 +74,12 @@ export const queries = createQueryKeyStore({
   playlists: {
     all: {
       queryKey: null,
-      queryFn: () => getPlaylists(),
+      queryFn: () =>
+        getPlaylists({
+          columns: ["name", "artwork"],
+          trackColumns: ["artwork"],
+          albumColumns: ["artwork"],
+        }),
     },
     detail: (playlistName: string) => ({
       queryKey: [playlistName],
@@ -77,7 +90,18 @@ export const queries = createQueryKeyStore({
   tracks: {
     all: {
       queryKey: null,
-      queryFn: () => getTracks(),
+      queryFn: () =>
+        getTracks({
+          columns: [
+            "id",
+            "name",
+            "artistName",
+            "duration",
+            "artwork",
+            "modificationTime",
+          ],
+          albumColumns: ["name", "artistName", "artwork"],
+        }),
     },
     detail: (trackId: string) => ({
       queryKey: [trackId],
@@ -121,8 +145,17 @@ export const queries = createQueryKeyStore({
 /** Get favorited albums & playlists. */
 async function getFavoriteLists() {
   const [favAlbums, favPlaylists] = await Promise.all([
-    getAlbums([eq(albums.isFavorite, true)]),
-    getPlaylists([eq(playlists.isFavorite, true)]),
+    getAlbums({
+      where: [eq(albums.isFavorite, true)],
+      columns: ["id", "name", "artistName", "artwork"],
+      trackColumns: ["id"],
+    }),
+    getPlaylists({
+      where: [eq(playlists.isFavorite, true)],
+      columns: ["name", "artwork"],
+      trackColumns: ["artwork"],
+      albumColumns: ["artwork"],
+    }),
   ]);
   return { albums: favAlbums, playlists: favPlaylists };
 }

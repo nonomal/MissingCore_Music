@@ -70,6 +70,8 @@ See all the [available documentation here](./docs). Some highlights include:
 
 Read the [Translations](./docs/translations.md) documentation for a rundown of how to contribute translations to this app.
 
+A huge thanks to the early translators prior to our move to Crowdin:
+
 | Translation |                      Translator                      |
 | :---------: | :--------------------------------------------------: |
 |   日本語    |   [@reindex-ot](https://www.github.com/reindex-ot)   |
@@ -79,7 +81,9 @@ Read the [Translations](./docs/translations.md) documentation for a rundown of h
 |  Français   |        [@nin7o](https://www.github.com/nin7o)        |
 |  简体中文   |     [@yang1206](https://www.github.com/yang1206)     |
 |   Русский   |     [@klinoff0](https://www.github.com/klinoff0)     |
-|   Türkçe   |     [@mikropsoft](https://www.github.com/mikropsoft)     |
+|   Türkçe    |   [@mikropsoft](https://www.github.com/mikropsoft)   |
+|   Català    |      [@T-K-Y-M](https://www.github.com/T-K-Y-M)      |
+|    हिंदी    |    [@OxSourabh](https://www.github.com/OxSourabh)    |
 
 # Legal
 

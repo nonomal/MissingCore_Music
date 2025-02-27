@@ -6,22 +6,22 @@ import { eq, inArray } from "drizzle-orm";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
-import { db } from "@/db";
-import type { TrackWithAlbum } from "@/db/schema";
-import { albums, playlists, tracks } from "@/db/schema";
-import { mergeTracks, sanitizePlaylistName } from "@/db/utils";
+import { db } from "~/db";
+import type { TrackWithAlbum } from "~/db/schema";
+import { albums, playlists, tracks } from "~/db/schema";
+import { mergeTracks, sanitizePlaylistName } from "~/db/utils";
 
-import i18next from "@/modules/i18n";
-import { getAlbums } from "@/api/album";
-import { createPlaylist, getPlaylists, updatePlaylist } from "@/api/playlist";
-import { getTracks } from "@/api/track";
-import { musicStore } from "@/modules/media/services/Music";
-import { RecentList } from "@/modules/media/services/RecentList";
-import { Resynchronize } from "@/modules/media/services/Resynchronize";
+import i18next from "~/modules/i18n";
+import { getAlbums } from "~/api/album";
+import { createPlaylist, getPlaylists, updatePlaylist } from "~/api/playlist";
+import { getTracks } from "~/api/track";
+import { musicStore } from "~/modules/media/services/Music";
+import { RecentList } from "~/modules/media/services/RecentList";
+import { Resynchronize } from "~/modules/media/services/Resynchronize";
 
-import { clearAllQueries } from "@/lib/react-query";
-import { ToastOptions } from "@/lib/toast";
-import { pickKeys } from "@/utils/object";
+import { clearAllQueries } from "~/lib/react-query";
+import { ToastOptions } from "~/lib/toast";
+import { pickKeys } from "~/utils/object";
 
 const SAF = FileSystem.StorageAccessFramework;
 
@@ -93,9 +93,9 @@ async function findExistingTracksFactory() {
 async function exportBackup() {
   // Get favorited values.
   const [favAlbums, favPlaylists, favTracks] = await Promise.all([
-    getAlbums([eq(albums.isFavorite, true)]),
-    getPlaylists([eq(playlists.isFavorite, true)]),
-    getTracks([eq(tracks.isFavorite, true)]),
+    getAlbums({ where: [eq(albums.isFavorite, true)] }),
+    getPlaylists({ where: [eq(playlists.isFavorite, true)] }),
+    getTracks({ where: [eq(tracks.isFavorite, true)] }),
   ]);
   // Get all user-generated playlists.
   const allPlaylists = await getPlaylists();
@@ -104,7 +104,7 @@ async function exportBackup() {
   // save this backup file.
   const downloadDir = SAF.getUriForDirectoryInRoot("Download");
   const perms = await SAF.requestDirectoryPermissionsAsync(downloadDir);
-  if (!perms.granted) throw new Error(i18next.t("response.actionCancel"));
+  if (!perms.granted) throw new Error(i18next.t("err.msg.actionCancel"));
 
   // Create a new file in specified directory & write contents.
   const fileUri = await SAF.createFileAsync(
@@ -133,9 +133,9 @@ async function importBackup() {
   const { assets, canceled } = await DocumentPicker.getDocumentAsync({
     type: ["application/json", "application/octet-stream"],
   });
-  if (canceled) throw new Error(i18next.t("response.actionCancel"));
+  if (canceled) throw new Error(i18next.t("err.msg.actionCancel"));
   const document = assets[0];
-  if (!document) throw new Error(i18next.t("response.noSelect"));
+  if (!document) throw new Error(i18next.t("err.msg.noSelect"));
 
   // Read, parse, and validate file contents.
   const docContents = await FileSystem.readAsStringAsync(document.uri);
@@ -146,7 +146,7 @@ async function importBackup() {
   } catch (err) {
     // Delete cached file before throwing a more readable error.
     await FileSystem.deleteAsync(document.uri);
-    throw new Error(i18next.t("response.invalidStructure"));
+    throw new Error(i18next.t("err.msg.invalidStructure"));
   }
 
   const allPlaylists = await getPlaylists();
@@ -213,7 +213,7 @@ export const useExportBackup = () => {
     mutationFn: exportBackup,
     onSuccess: () => {
       RecentList.refresh();
-      toast(t("response.exportSuccess"), ToastOptions);
+      toast(t("feat.backup.extra.exportSuccess"), ToastOptions);
     },
     onError: (err) => {
       toast.error(err.message, ToastOptions);
@@ -229,7 +229,7 @@ export const useImportBackup = () => {
     mutationFn: importBackup,
     onSuccess: () => {
       clearAllQueries(queryClient);
-      toast(t("response.importSuccess"), ToastOptions);
+      toast(t("feat.backup.extra.importSuccess"), ToastOptions);
     },
     onError: (err) => {
       toast.error(err.message, ToastOptions);

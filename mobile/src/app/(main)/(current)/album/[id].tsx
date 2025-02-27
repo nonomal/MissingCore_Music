@@ -2,17 +2,17 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
-import { Favorite } from "@/icons/Favorite";
-import { useAlbumForScreen, useFavoriteAlbum } from "@/queries/album";
-import { useBottomActionsContext } from "@/hooks/useBottomActionsContext";
-import { CurrentListLayout } from "@/layouts/CurrentList";
+import { Favorite } from "~/icons/Favorite";
+import { useAlbumForScreen, useFavoriteAlbum } from "~/queries/album";
+import { useBottomActionsContext } from "~/hooks/useBottomActionsContext";
+import { CurrentListLayout } from "~/layouts/CurrentList";
 
-import { mutateGuard } from "@/lib/react-query";
-import { FlashList } from "@/components/Defaults";
-import { IconButton } from "@/components/Form/Button";
-import { PagePlaceholder } from "@/components/Transition/Placeholder";
-import { Em, StyledText } from "@/components/Typography/StyledText";
-import { Track } from "@/modules/media/components/Track";
+import { mutateGuard } from "~/lib/react-query";
+import { FlashList } from "~/components/Defaults";
+import { IconButton } from "~/components/Form/Button";
+import { PagePlaceholder } from "~/components/Transition/Placeholder";
+import { Em, StyledText } from "~/components/Typography/StyledText";
+import { Track } from "~/modules/media/components/Track";
 
 /** Screen for `/album/[id]` route. */
 export default function CurrentAlbumScreen() {
@@ -45,7 +45,7 @@ export default function CurrentAlbumScreen() {
           headerRight: () => (
             <IconButton
               kind="ripple"
-              accessibilityLabel={t(`common.${isToggled ? "unF" : "f"}avorite`)}
+              accessibilityLabel={t(`term.${isToggled ? "unF" : "f"}avorite`)}
               onPress={() => mutateGuard(favoriteAlbum, !data.isFavorite)}
             >
               <Favorite filled={isToggled} />
@@ -68,7 +68,7 @@ export default function CurrentAlbumScreen() {
             <>
               {item.disc !== null && discLocation[item.disc] === index ? (
                 <Em dim className={index === 0 ? "mb-2" : "mt-4"}>
-                  {t("common.disc", { count: item.disc })}
+                  {t("term.disc", { count: item.disc })}
                 </Em>
               ) : null}
               <Track

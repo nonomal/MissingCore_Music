@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router, useRootNavigationState } from "expo-router";
+import type { ParseKeys } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef } from "react";
 import { FlatList, View } from "react-native";
@@ -8,16 +9,17 @@ import Animated, {
   SlideInDown,
 } from "react-native-reanimated";
 
-import { Search } from "@/icons/Search";
-import { Settings } from "@/icons/Settings";
-import { useBottomActionsContext } from "@/hooks/useBottomActionsContext";
-import { useHasNewUpdate } from "@/hooks/useHasNewUpdate";
-import { useTheme } from "@/hooks/useTheme";
+import { Search } from "~/icons/Search";
+import { Settings } from "~/icons/Settings";
+import { useTabsByVisibility } from "~/services/UserPreferences";
+import { useBottomActionsContext } from "~/hooks/useBottomActionsContext";
+import { useHasNewUpdate } from "~/hooks/useHasNewUpdate";
+import { useTheme } from "~/hooks/useTheme";
 
-import { cn } from "@/lib/style";
-import { Button, IconButton } from "@/components/Form/Button";
-import { StyledText } from "@/components/Typography/StyledText";
-import { MiniPlayer } from "@/modules/media/components/MiniPlayer";
+import { cn } from "~/lib/style";
+import { Button, IconButton } from "~/components/Form/Button";
+import { StyledText } from "~/components/Typography/StyledText";
+import { MiniPlayer } from "~/modules/media/components/MiniPlayer";
 
 //#region Layout
 /** Contains content that doesn't take up the full-screen. */
@@ -69,14 +71,14 @@ function TabBar({ stacked = false, hidden = false }) {
       <NavigationList />
       <IconButton
         kind="ripple"
-        accessibilityLabel={t("header.search")}
+        accessibilityLabel={t("feat.search.title")}
         onPress={() => router.navigate("/search")}
       >
         <Search />
       </IconButton>
       <IconButton
         kind="ripple"
-        accessibilityLabel={t("header.settings")}
+        accessibilityLabel={t("term.settings")}
         onPress={() => router.navigate("/setting")}
         className="relative"
       >
@@ -89,37 +91,50 @@ function TabBar({ stacked = false, hidden = false }) {
   );
 }
 
-/** List of routes we'll display buttons for on the "home" page. */
-const NavRoutes = [
-  { href: "/", key: "header.home" },
-  { href: "/folder", key: "common.folders" },
-  { href: "/playlist", key: "common.playlists" },
-  { href: "/track", key: "common.tracks" },
-  { href: "/album", key: "common.albums" },
-  { href: "/artist", key: "common.artists" },
-] as const;
-
 /** List of routes in `(home)` group. */
 function NavigationList() {
   const { t, i18n } = useTranslation();
   const { surface } = useTheme();
   const navState = useRootNavigationState();
   const listRef = useRef<FlatList>(null);
+  const { displayedTabs } = useTabsByVisibility();
 
-  const tabIndex = useMemo(() => {
+  // Buttons for the routes we can navigate to on the "home" screen, whose
+  // order can be customized.
+  const NavRoutes: Array<{ href: string; key: ParseKeys; name: string }> =
+    useMemo(
+      () => [
+        { href: "/", key: "term.home", name: "index" },
+        ...displayedTabs.map((tabKey) => ({
+          href: `/${tabKey}`,
+          key: `term.${tabKey}s` satisfies ParseKeys,
+          name: tabKey,
+        })),
+      ],
+      [displayedTabs],
+    );
+
+  // Name of the current route.
+  const routeName = useMemo(() => {
     const mainRoute = navState.routes.find((r) => r.name === "(main)");
-    if (!mainRoute || !mainRoute.state) return 0;
+    if (!mainRoute || !mainRoute.state) return undefined;
     const homeRoute = mainRoute.state.routes.find((r) => r.name === "(home)");
-    if (!homeRoute || !homeRoute.state) return 0;
-    return homeRoute.state.index ?? 0;
+    if (!homeRoute || !homeRoute.state) return undefined;
+    const { index, routeNames } = homeRoute.state;
+    if (index === undefined || !routeNames) return undefined;
+    return routeNames[index];
   }, [navState]);
 
   useEffect(() => {
-    if (!listRef.current) return;
-    // Scroll to active tab (positioned in the middle of the visible area).
-    //  - Also fire when language changes due to word length being different.
-    listRef.current.scrollToIndex({ index: tabIndex, viewPosition: 0.5 });
-  }, [i18n.language, tabIndex]);
+    if (!listRef.current || !routeName) return;
+    try {
+      const tabIndex = NavRoutes.findIndex(({ name }) => routeName === name);
+      if (tabIndex === -1) return;
+      // Scroll to active tab (positioned in the middle of the visible area).
+      //  - Also fire when language changes due to word length being different.
+      listRef.current.scrollToIndex({ index: tabIndex, viewPosition: 0.5 });
+    } catch {}
+  }, [i18n.language, routeName, NavRoutes]);
 
   return (
     <View className="relative shrink grow">
@@ -128,16 +143,16 @@ function NavigationList() {
         horizontal
         data={NavRoutes}
         keyExtractor={({ href }) => href}
-        renderItem={({ item, index }) => (
+        renderItem={({ item: { href, key, name } }) => (
           <Button
-            onPress={() => router.navigate(item.href)}
-            disabled={tabIndex === index}
+            onPress={() => router.navigate(href)}
+            disabled={routeName === name}
             className="bg-transparent px-2 disabled:opacity-100"
           >
             <StyledText
-              className={cn("text-sm", { "text-red": tabIndex === index })}
+              className={cn("text-sm", { "text-red": routeName === name })}
             >
-              {t(item.key).toLocaleUpperCase()}
+              {t(key).toLocaleUpperCase()}
             </StyledText>
           </Button>
         )}

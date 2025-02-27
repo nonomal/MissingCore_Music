@@ -2,15 +2,24 @@ import { toast } from "@backpackapp-io/react-native-toast";
 import { router } from "expo-router";
 import TrackPlayer, { Event } from "react-native-track-player";
 
-import i18next from "@/modules/i18n";
-import { deleteTrack } from "@/api/track";
-import type { TrackStatus } from "@/modules/media/services/Music";
-import { Queue, RNTPManager, musicStore } from "@/modules/media/services/Music";
-import { MusicControls } from "@/modules/media/services/Playback";
-import { removeUnusedCategories } from "@/modules/scanning/helpers/audio";
+import i18next from "~/modules/i18n";
+import { deleteTrack } from "~/api/track";
+import type { TrackStatus } from "~/modules/media/services/Music";
+import { Queue, RNTPManager, musicStore } from "~/modules/media/services/Music";
+import { MusicControls } from "~/modules/media/services/Playback";
+import { removeUnusedCategories } from "~/modules/scanning/helpers/audio";
 
-import { clearAllQueries } from "@/lib/react-query";
-import { ToastOptions } from "@/lib/toast";
+import { clearAllQueries } from "~/lib/react-query";
+import { ToastOptions } from "~/lib/toast";
+
+/** Context to whether we should resume playback after ducking. */
+let resumeAfterDuck: boolean = false;
+
+/** Errors which should cause us to "delete" a track. */
+const ValidErrors = [
+  "android-io-file-not-found",
+  "android-failed-runtime-check",
+];
 
 /** How we handle the actions in the media control notification. */
 export async function PlaybackService() {
@@ -38,16 +47,21 @@ export async function PlaybackService() {
     if (e.permanent) {
       await MusicControls.stop();
     } else {
-      if (e.paused) await MusicControls.pause();
-      else await MusicControls.play();
+      if (e.paused) {
+        resumeAfterDuck = musicStore.getState().isPlaying;
+        await MusicControls.pause();
+      } else if (resumeAfterDuck) {
+        await MusicControls.play();
+        resumeAfterDuck = false;
+      }
     }
   });
 
   TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, async (e) => {
-    if (e.index === undefined) return;
+    if (e.index === undefined || e.track === undefined) return;
 
-    const { repeat, queuedTrackList } = musicStore.getState();
-    const activeTrack = e.track!;
+    const { repeat, queueList } = musicStore.getState();
+    const activeTrack = e.track;
     const trackStatus: TrackStatus = activeTrack["music::status"];
 
     if (trackStatus === "END") {
@@ -56,13 +70,10 @@ export async function PlaybackService() {
       // Remove 1st item in `queueList` if they're the same (doesn't
       // fire if we manually forced the next track to play - which would
       // cause `e.index` to be `0`).
-      if (e.index > 0 && activeTrack.id === queuedTrackList[0]?.id) {
-        // Update the displayed track.
-        musicStore.setState({
-          activeId: activeTrack.id,
-          activeTrack: queuedTrackList[0],
-          isInQueue: true,
-        });
+      if (e.index > 0 && activeTrack.id === queueList[0]) {
+        // Update the displayed track (let the `activeId` subscription
+        // handle updating `activeTrack`).
+        musicStore.setState({ activeId: activeTrack.id, isInQueue: true });
         await Queue.removeAtIndex(0);
       } else {
         musicStore.setState({ isInQueue: true });
@@ -73,7 +84,7 @@ export async function PlaybackService() {
 
       // Since we played this track naturally, the index hasn't been updated
       // in the store.
-      const nextTrack = RNTPManager.getNextTrack();
+      const nextTrack = await RNTPManager.getNextTrack();
       musicStore.setState(nextTrack);
 
       // Check if we should pause after looping logic.
@@ -93,24 +104,28 @@ export async function PlaybackService() {
     const erroredTrack = await TrackPlayer.getActiveTrack();
     console.log(`[${e.code}] ${e.message}`, erroredTrack);
 
-    // Delete the track that caused the error if we encounter either an
-    // `android-io-file-not-found` error code or no code.
-    //  - We've encountered no code when RNTP naturally plays the next
-    //  track that throws an error because it doesn't exist.
-    if (
-      erroredTrack?.id &&
-      (e.code === "android-io-file-not-found" || e.code === undefined)
-    ) {
-      await deleteTrack(erroredTrack.id);
-      await removeUnusedCategories();
-      clearAllQueries();
-      router.navigate("/");
+    if (erroredTrack) {
+      // Delete the track that caused the error from certain scenarios.
+      //  - We've encountered no code when RNTP naturally plays the next
+      //  track that throws an error because it doesn't exist.
+      if (ValidErrors.includes(e.code) || e.code === undefined) {
+        let errorMessage = "File not found.";
+        if (e.code === "android-failed-runtime-check")
+          errorMessage =
+            "Unexpected runtime error. For example, this may happen if the file has a sample rate greater than or equal to 352.8kHz.";
+
+        await deleteTrack(erroredTrack.id, { errorName: e.code, errorMessage });
+        await removeUnusedCategories();
+        clearAllQueries();
+        router.navigate("/");
+      }
+
+      toast.error(
+        i18next.t("template.notFound", { name: erroredTrack.title }),
+        ToastOptions,
+      );
     }
 
-    toast.error(
-      i18next.t("template.notFound", { name: erroredTrack?.title }),
-      ToastOptions,
-    );
     // Clear all reference of the current playing track.
     await musicStore.getState().reset();
   });

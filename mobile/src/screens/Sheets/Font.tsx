@@ -3,12 +3,12 @@ import { Text } from "react-native";
 import {
   FontOptions,
   useUserPreferencesStore,
-} from "@/services/UserPreferences";
+} from "~/services/UserPreferences";
 
-import { getAccentFont } from "@/lib/style";
-import { SheetsFlatList } from "@/components/Defaults";
-import { Radio } from "@/components/Form/Selection";
-import { Sheet } from "@/components/Sheet";
+import { getAccentFont } from "~/lib/style";
+import { SheetsFlatList } from "~/components/Defaults";
+import { Radio } from "~/components/Form/Selection";
+import { Sheet } from "~/components/Sheet";
 
 /** Sheet allowing us to change the app's accent font. */
 export default function FontSheet() {
@@ -18,10 +18,11 @@ export default function FontSheet() {
   return (
     <Sheet
       id="FontSheet"
-      titleKey="title.font"
+      titleKey="feat.accentFont.title"
       contentContainerClassName="pb-0"
     >
       <SheetsFlatList
+        accessibilityRole="radiogroup"
         data={FontOptions}
         keyExtractor={(font) => font}
         renderItem={({ item: font }) => (

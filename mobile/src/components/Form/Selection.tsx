@@ -1,9 +1,9 @@
 import type { StyleProp, ViewStyle } from "react-native";
 import { Pressable, View } from "react-native";
 
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "~/hooks/useTheme";
 
-import { cn } from "@/lib/style";
+import { cn } from "~/lib/style";
 
 /** Shared props between `<Checkbox />` and `<Radio />`. */
 type SelectionProps = {
@@ -37,6 +37,8 @@ function Selection(props: SelectionProps & { type: "checkbox" | "radio" }) {
       className={cn("overflow-hidden rounded-md", props.wrapperClassName)}
     >
       <Pressable
+        accessibilityRole={props.type}
+        accessibilityState={{ checked: props.selected }}
         android_ripple={{ color: surface }}
         onPress={props.onSelect}
         // `<Radio />` utilizes the `disabled` prop to prevent togglability.

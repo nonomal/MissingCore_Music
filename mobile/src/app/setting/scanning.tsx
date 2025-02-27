@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { SheetManager } from "react-native-actions-sheet";
 
-import { useUserPreferencesStore } from "@/services/UserPreferences";
-import { useRescanForTracks } from "@/modules/scanning/helpers/rescan";
-import { StandardScrollLayout } from "@/layouts/StandardScroll";
+import { useUserPreferencesStore } from "~/services/UserPreferences";
+import { useRescanForTracks } from "~/modules/scanning/helpers/rescan";
+import { StandardScrollLayout } from "~/layouts/StandardScroll";
 
-import { mutateGuard } from "@/lib/react-query";
-import { List, ListItem } from "@/components/Containment/List";
+import { mutateGuard } from "~/lib/react-query";
+import { List, ListItem } from "~/components/Containment/List";
 
 /** Screen for `/setting/scanning` route. */
 export default function ScanningScreen() {
@@ -18,17 +18,26 @@ export default function ScanningScreen() {
 
   return (
     <StandardScrollLayout>
-      <ListItem
-        titleKey="settings.rescan"
-        description={t("settings.brief.rescan")}
-        disabled={rescan.isPending}
-        onPress={() => mutateGuard(rescan, undefined)}
-        {...{ first: true, last: true }}
-      />
+      <List>
+        <ListItem
+          titleKey="feat.rescan.title"
+          description={t("feat.rescan.brief")}
+          disabled={rescan.isPending}
+          onPress={() => mutateGuard(rescan, undefined)}
+          first
+        />
+        <ListItem
+          titleKey="feat.deepRescan.title"
+          description={t("feat.deepRescan.brief")}
+          disabled={rescan.isPending}
+          onPress={() => mutateGuard(rescan, true)}
+          last
+        />
+      </List>
 
       <List>
         <ListItem
-          titleKey="title.listAllow"
+          titleKey="feat.listAllow.title"
           description={t("plural.entry", { count: allowList.length })}
           onPress={() =>
             SheetManager.show("ScanFilterListSheet", {
@@ -38,7 +47,7 @@ export default function ScanningScreen() {
           first
         />
         <ListItem
-          titleKey="title.listBlock"
+          titleKey="feat.listBlock.title"
           description={t("plural.entry", { count: blockList.length })}
           onPress={() =>
             SheetManager.show("ScanFilterListSheet", {
@@ -47,7 +56,7 @@ export default function ScanningScreen() {
           }
         />
         <ListItem
-          titleKey="title.ignoreDuration"
+          titleKey="feat.ignoreDuration.title"
           description={t("plural.second", { count: ignoreDuration })}
           onPress={() => SheetManager.show("MinDurationSheet")}
           last

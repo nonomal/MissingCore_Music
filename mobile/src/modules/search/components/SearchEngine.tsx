@@ -4,22 +4,22 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 import type {
-  AlbumWithTracks,
-  ArtistWithTracks,
-  PlaylistWithTracks,
-  TrackWithAlbum,
-} from "@/db/schema";
-import { getPlaylistCover, getTrackCover } from "@/db/utils";
+  SlimAlbumWithTracks,
+  SlimArtist,
+  SlimPlaylistWithTracks,
+  SlimTrackWithAlbum,
+} from "~/db/slimTypes";
+import { getPlaylistCover, getTrackCover } from "~/db/utils";
 
-import { Close } from "@/icons/Close";
-import { Search } from "@/icons/Search";
-import { useTheme } from "@/hooks/useTheme";
+import { Close } from "~/icons/Close";
+import { Search } from "~/icons/Search";
+import { useTheme } from "~/hooks/useTheme";
 
-import { cn } from "@/lib/style";
-import { FlashList, SheetsFlashList } from "@/components/Defaults";
-import { IconButton } from "@/components/Form/Button";
-import { TextInput, useInputRef } from "@/components/Form/Input";
-import { TEm, TStyledText } from "@/components/Typography/StyledText";
+import { cn } from "~/lib/style";
+import { FlashList, SheetsFlashList } from "~/components/Defaults";
+import { IconButton } from "~/components/Form/Button";
+import { TextInput, useInputRef } from "~/components/Form/Input";
+import { TEm, TStyledText } from "~/components/Typography/StyledText";
 import { SearchResult } from "./SearchResult";
 import { useSearch } from "../hooks/useSearch";
 import type {
@@ -64,12 +64,12 @@ export function SearchEngine<TScope extends SearchCategories>(props: {
         <TextInput
           ref={inputRef}
           onChangeText={(text) => setQuery(text)}
-          placeholder={t("form.placeholder.searchMedia")}
+          placeholder={t("feat.search.extra.searchMedia")}
           className="shrink grow"
         />
         <IconButton
           kind="ripple"
-          accessibilityLabel={t("template.entryRemove", { name: query })}
+          accessibilityLabel={t("form.clear")}
           onPress={() => {
             inputRef?.current?.clear();
             setQuery("");
@@ -90,7 +90,7 @@ export function SearchEngine<TScope extends SearchCategories>(props: {
             if (typeof item === "string") {
               return (
                 <TEm
-                  textKey={`common.${item}`}
+                  textKey={`term.${item}`}
                   className={index > 0 ? "mt-4" : undefined}
                 />
               );
@@ -112,7 +112,7 @@ export function SearchEngine<TScope extends SearchCategories>(props: {
           }}
           ListEmptyComponent={
             query.length > 0 ? (
-              <TStyledText textKey="response.noResults" center />
+              <TStyledText textKey="err.msg.noResults" center />
             ) : undefined
           }
           contentContainerClassName="pb-4 pt-6"
@@ -159,10 +159,10 @@ function formatResults(results: Partial<SearchResults>) {
 }
 
 type MediaRelations =
-  | { type: "album"; data: AlbumWithTracks }
-  | { type: "artist"; data: ArtistWithTracks }
-  | { type: "playlist"; data: PlaylistWithTracks }
-  | { type: "track"; data: TrackWithAlbum };
+  | { type: "album"; data: SlimAlbumWithTracks }
+  | { type: "artist"; data: SlimArtist }
+  | { type: "playlist"; data: SlimPlaylistWithTracks }
+  | { type: "track"; data: SlimTrackWithAlbum };
 
 /** Get the artwork of the media that'll be displayed. */
 function getArtwork(props: MediaRelations) {

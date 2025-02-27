@@ -1,10 +1,10 @@
-import { useUserPreferencesStore } from "@/services/UserPreferences";
-import { LANGUAGES } from "@/modules/i18n/constants";
+import { useUserPreferencesStore } from "~/services/UserPreferences";
+import { LANGUAGES } from "~/modules/i18n/constants";
 
-import { SheetsFlatList } from "@/components/Defaults";
-import { Radio } from "@/components/Form/Selection";
-import { Sheet } from "@/components/Sheet";
-import { StyledText } from "@/components/Typography/StyledText";
+import { SheetsFlatList } from "~/components/Defaults";
+import { Radio } from "~/components/Form/Selection";
+import { Sheet } from "~/components/Sheet";
+import { StyledText } from "~/components/Typography/StyledText";
 
 /** Sheet allowing us to change the app's language. */
 export default function LanguageSheet() {
@@ -14,10 +14,11 @@ export default function LanguageSheet() {
   return (
     <Sheet
       id="LanguageSheet"
-      titleKey="title.language"
+      titleKey="feat.language.title"
       contentContainerClassName="pb-0"
     >
       <SheetsFlatList
+        accessibilityRole="radiogroup"
         data={LANGUAGES}
         keyExtractor={({ code }) => code}
         renderItem={({ item }) => (
